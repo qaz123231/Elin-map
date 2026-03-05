@@ -30,7 +30,7 @@ const description = document.getElementById("tileDescription");
 /* HOVER RECTANGLE */
 
 let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
-  color:"red",
+  color:"Black",
   weight:1,
   fill:false
 }).addTo(map);
@@ -60,7 +60,41 @@ let tileData = {};
 const res = await fetch("/tileData.json");
 tileData = await res.json();
 
-/* DRAW BLUE TILES */
+//draw grid
+
+const gridGroup = L.layerGroup().addTo(map);
+
+const rows = Math.ceil(mapHeight / tileSize);
+const cols = Math.ceil(mapWidth / tileSize);
+
+// Horizontal lines
+for (let i = 0; i <= rows; i++) {
+  const y = i * tileSize;
+  const line = L.polyline([[y, 0], [y, mapWidth]], {
+    color: 'white',
+    weight: 0.5,
+    opacity: 0.2,
+    interactive: false
+  });
+  gridGroup.addLayer(line);
+}
+
+// Vertical lines
+for (let j = 0; j <= cols; j++) {
+  const x = j * tileSize;
+  const line = L.polyline([[0, x], [mapHeight, x]], {
+    color: 'white',
+    weight: 0.5,
+    opacity: 0.2,
+    interactive: false
+  });
+  gridGroup.addLayer(line);
+}
+
+
+
+
+/* DRAW TILES */
 
 for(const key in tileData){
 
@@ -70,11 +104,32 @@ for(const key in tileData){
     [tileY*tileSize,tileX*tileSize],
     [tileY*tileSize+tileSize,tileX*tileSize+tileSize]
   ],{
-    color:"blue",
+    color:"black",
     weight:1,
-    fillOpacity:0.1
+    opacity:.25,
+    fillOpacity:0.05
   }).addTo(map);
 
+}
+
+// On map titles
+
+// Add labels above defined tiles
+for (const key in tileData) {
+  const [tileX, tileY] = key.split(",").map(Number);
+
+  const centerLat = tileY *tileSize+ tileSize / 2;
+  const centerLng = tileX * tileSize + tileSize / 2;
+
+  L.marker([centerLat + tileSize, centerLng], {
+    icon: L.divIcon({
+      className: 'tileLabel',
+      html: `<span>${tileData[key].title}</span>`,
+      iconSize: null,
+      iconAnchor: [0, 0], // top-left corner of marker
+    }),
+    interactive: false
+  }).addTo(map);
 }
 
 /* CLICK HANDLER */

@@ -15,6 +15,22 @@ html, body {
   white-space: normal;
   word-wrap: break-word; 
 }
+
+.tileLabel span {
+  display: inline-block;
+  position: absolute;
+  left: 50%;            /* move left to center */
+  transform: translateX(-50%);  /* center over marker */
+  font-family: sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: rgb(0, 0, 0);
+  text-shadow: 1px 1px rgb(255, 255, 255),-1px 1px rgb(255, 255, 255),1px -1px rgb(255, 255, 255),-1px -1px rgb(255, 255, 255);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* RIGHT INFO PANEL */
 
 #infoPanel {
