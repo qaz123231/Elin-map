@@ -1,8 +1,5 @@
-import { defineConfig } from 'vite';
-// ... other imports
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-  // set the base to your repository name
-  base: "/Elin-map/", 
-  plugins: [],
-});
+  base: '/',
+})
