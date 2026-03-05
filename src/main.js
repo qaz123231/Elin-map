@@ -10,8 +10,14 @@ const map = L.map("map", {
   crs: L.CRS.Simple,
   minZoom: -.5,
   maxZoom: 4,
-  zoomSnap: 0.1
+  zoomSnap: 0.1,
+  attributionControl: true
 });
+
+map.attributionControl.setPrefix(false); // remove "Leaflet" prefix if you want
+map.attributionControl.addAttribution(
+  'Map by <a href="https://github.com/qaz123231/Elin-map" target="_blank">qaz123231</a>'
+);
 
 const bounds = [[0,0],[mapHeight,mapWidth]];
 
