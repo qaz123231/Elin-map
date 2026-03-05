@@ -10,87 +10,111 @@ const map = L.map("map", {
   crs: L.CRS.Simple,
   minZoom: -.5,
   maxZoom: 4,
-  zoomSnap: 0.1,
-  wheelPxPerZoomLevel: 100,
+  zoomSnap: 0.1
 });
 
-const bounds = [[0, 0], [mapHeight, mapWidth]];
+const bounds = [[0,0],[mapHeight,mapWidth]];
+
 L.imageOverlay("/overworld.png", bounds).addTo(map);
+
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
 
-// Hover rectangle
-let hoverRect = L.rectangle([[0, 0], [tileSize, tileSize]], {
-  color: "red",
-  weight: 1,
-  fill: false,
+/* UI ELEMENTS */
+
+const coordBox = document.getElementById("coordBox");
+const panel = document.getElementById("infoPanel");
+const title = document.getElementById("tileTitle");
+const description = document.getElementById("tileDescription");
+
+/* HOVER RECTANGLE */
+
+let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
+  color:"red",
+  weight:1,
+  fill:false
 }).addTo(map);
 
-function updateHoverRect(latlng) {
-  const x = Math.floor(latlng.lng / tileSize) * tileSize;
-  const y = Math.floor(latlng.lat / tileSize) * tileSize;
-  hoverRect.setBounds([[y, x], [y + tileSize, x + tileSize]]);
+function updateHover(latlng){
+
+  const tileX = Math.floor(latlng.lng/tileSize);
+  const tileY = Math.floor(latlng.lat/tileSize);
+
+  const x = tileX*tileSize;
+  const y = tileY*tileSize;
+
+  hoverRect.setBounds([
+    [y,x],
+    [y+tileSize,x+tileSize]
+  ]);
+
+  coordBox.textContent = `Tile: (${tileX}, ${tileY})`;
 }
 
-map.on("mousemove", (e) => updateHoverRect(e.latlng));
+map.on("mousemove",(e)=>updateHover(e.latlng));
 
-// Load tile data from JSON
+/* LOAD TILE DATA */
+
 let tileData = {};
-const predefinedTileRects = {}; // to store rectangles
 
-async function loadTileData() {
-  try {
-    const res = await fetch("/tileData.json");
-    tileData = await res.json();
+const res = await fetch("/tileData.json");
+tileData = await res.json();
 
-    // Draw faint blue rectangle on all predefined tiles
-    for (const key in tileData) {
-      const [tileX, tileY] = key.split(",").map(Number);
-      const rect = L.rectangle(
-        [
-          [tileY * tileSize, tileX * tileSize],
-          [tileY * tileSize + tileSize, tileX * tileSize + tileSize],
-        ],
-        { color: "blue", weight: 1, fillOpacity: 0.1 } // faint fill
-      ).addTo(map);
-      predefinedTileRects[key] = rect;
-    }
-  } catch (err) {
-    console.error("Could not load tileData.json:", err);
-    tileData = {};
-  }
+/* DRAW BLUE TILES */
+
+for(const key in tileData){
+
+  const [tileX,tileY] = key.split(",").map(Number);
+
+  L.rectangle([
+    [tileY*tileSize,tileX*tileSize],
+    [tileY*tileSize+tileSize,tileX*tileSize+tileSize]
+  ],{
+    color:"blue",
+    weight:1,
+    fillOpacity:0.1
+  }).addTo(map);
+
 }
 
-await loadTileData();
+/* CLICK HANDLER */
 
-// Click to show popup
 map.on("click", (e) => {
+
   const tileX = Math.floor(e.latlng.lng / tileSize);
   const tileY = Math.floor(e.latlng.lat / tileSize);
+
   const key = `${tileX},${tileY}`;
 
-  const centerLat = tileY * tileSize + tileSize / 2;
-  const centerLng = tileX * tileSize + tileSize / 2;
-
-  let content = `Tile coordinate: (${tileX}, ${tileY})`;
-
   if (tileData[key]) {
-  // Convert \n to <br> for HTML display
-  const descriptionHtml = tileData[key].description.replace(/\n/g, "<br>");
-  content = `<b>${tileData[key].title}</b><br>${descriptionHtml}`;
-}
 
-L.popup({
-  autoClose: true,
-  closeOnClick: true,
-  maxWidth: 300,       // max width of popup in pixels
-  keepInView: true     // ensures popup stays within viewport
-})
-  .setLatLng([centerLat, centerLng])
-  .setContent(content)
-  .openOn(map);
+    const newTitle = tileData[key].title;
+    const newDescription =
+      tileData[key].description.replace(/\n/g, "<br>");
+
+    // If already open, close first to replay animation
+    if (panel.classList.contains("open")) {
+
+      panel.classList.remove("open");
+
+      setTimeout(() => {
+        title.textContent = newTitle;
+        description.innerHTML = newDescription;
+        panel.classList.add("open");
+      }, 200);
+
+    } else {
+
+      title.textContent = newTitle;
+      description.innerHTML = newDescription;
+      panel.classList.add("open");
+
+    }
+
+  } else {
+
+    panel.classList.remove("open");
+
+  }
+
 });
-
-// Recalculate hover rectangle on zoom/pan
-map.on("zoom", () => updateHoverRect(hoverRect.getBounds().getNorthWest()));
-map.on("move", () => updateHoverRect(hoverRect.getBounds().getNorthWest()));
