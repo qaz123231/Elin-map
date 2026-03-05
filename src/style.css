@@ -1,0 +1,15 @@
+html, body {
+  margin: 0;
+  height: 100%;
+}
+#map {
+  width: 100%;
+  height: 100vh;
+}
+.leaflet-image-layer {
+  image-rendering: pixelated;
+}
+.leaflet-popup-content {
+  white-space: normal;
+  word-wrap: break-word; 
+}
