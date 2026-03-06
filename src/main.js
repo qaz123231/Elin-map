@@ -1,6 +1,8 @@
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./style.css";
+import 'leaflet-groupedlayercontrol';
+import 'leaflet-groupedlayercontrol/dist/leaflet.groupedlayercontrol.min.css';
 
 const tileSize = 24;
 const mapWidth = 2928;
@@ -203,13 +205,21 @@ specialLayer.addTo(map);
 cityLayer.addTo(map);
 questLayer.addTo(map)
 
-overlayLayers["Dungeons"] = dungeonLayer;
-overlayLayers["Starts"] = startLayer;
-overlayLayers["Specials"] = specialLayer;
-overlayLayers["Cities"] = cityLayer;
-overlayLayers["Quests"] = questLayer;
+var groupedOverlays = {
+  "Settings": {
+    "Grid": gridLayer,
+    "Selection": hoverLayer
+  },
+  "Points of Interest": {
+    "Starting points": startLayer,
+    "Cities": cityLayer,
+    "Quests": questLayer,
+    "Dungeons": dungeonLayer,
+    "Specials": specialLayer
+  }
+};
 
-L.control.layers(null, overlayLayers).addTo(map);
+L.control.groupedLayers(null, groupedOverlays).addTo(map);
 
 //on click event
 
