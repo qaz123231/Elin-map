@@ -71,6 +71,33 @@ function updateHover(latlng){
 
 map.on("mousemove",(e)=>updateHover(e.latlng));
 
+const rows = Math.ceil(mapHeight / tileSize);
+const cols = Math.ceil(mapWidth / tileSize);
+
+// Horizontal lines
+for (let i = 0; i <= rows; i++) {
+  const y = i * tileSize;
+  const line = L.polyline([[y, 0], [y, mapWidth]], {
+    color: 'white',
+    weight: 0.5,
+    opacity: 0.2,
+    interactive: false
+  });
+  gridLayer.addLayer(line);
+}
+
+// Vertical lines
+for (let j = 0; j <= cols; j++) {
+  const x = j * tileSize;
+  const line = L.polyline([[0, x], [mapHeight, x]], {
+    color: 'white',
+    weight: 0.5,
+    opacity: 0.2,
+    interactive: false
+  });
+  gridLayer.addLayer(line);
+}
+
 //LOAD DATA 
 
 let tileData = {};
