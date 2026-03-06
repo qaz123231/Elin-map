@@ -9,8 +9,6 @@ const mapWidth = 2928;
 const mapHeight = 2544;
 
 // Layer groups
-const baseLayers = {};
-const overlayLayers = {};
 
 const mapImageLayer = L.layerGroup();
 const gridLayer = L.layerGroup();
@@ -164,7 +162,7 @@ for (const key in tileData) {
   const centerLat = tileY *tileSize+ tileSize / 2;
   const centerLng = tileX * tileSize + tileSize / 2;
 
-  var titles = L.marker([centerLat + tileSize, centerLng], {
+  var titles = L.marker([centerLat + tileSize*.75, centerLng], {
     icon: L.divIcon({
       className: 'tileLabel',
       html: `<span>${tileData[key].title}</span>`,
