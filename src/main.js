@@ -17,7 +17,7 @@ const poiLayers = {};
 const map = L.map("map", {
   crs: L.CRS.Simple,
   minZoom: -.5,
-  maxZoom: 4,
+  maxZoom: 2,
   zoomSnap: 0.1,
   attributionControl: true
 });
@@ -71,10 +71,11 @@ function updateHover(latlng){
 
 map.on("mousemove",(e)=>updateHover(e.latlng));
 
+//DRAW GRID
+
 const rows = Math.ceil(mapHeight / tileSize);
 const cols = Math.ceil(mapWidth / tileSize);
 
-// Horizontal lines
 for (let i = 0; i <= rows; i++) {
   const y = i * tileSize;
   const line = L.polyline([[y, 0], [y, mapWidth]], {
@@ -86,7 +87,6 @@ for (let i = 0; i <= rows; i++) {
   gridLayer.addLayer(line);
 }
 
-// Vertical lines
 for (let j = 0; j <= cols; j++) {
   const x = j * tileSize;
   const line = L.polyline([[0, x], [mapHeight, x]], {
