@@ -6,6 +6,21 @@ const tileSize = 24;
 const mapWidth = 2928;
 const mapHeight = 2544;
 
+// Layer groups
+const baseLayers = {};
+const overlayLayers = {};
+
+const mapImageLayer = L.layerGroup();
+const gridLayer = L.layerGroup();
+const hoverLayer = L.layerGroup();
+
+const specialLayer = L.layerGroup();
+const dungeonLayer = L.layerGroup();
+const cityLayer = L.layerGroup();
+const startLayer = L.layerGroup();
+const questLayer = L.layerGroup();
+
+
 //leaflet setup
 
 const map = L.map("map", {
@@ -23,7 +38,8 @@ map.attributionControl.addAttribution(
 
 const bounds = [[0,0],[mapHeight,mapWidth]];
 
-L.imageOverlay("/overworld.png", bounds).addTo(map);
+L.imageOverlay("/overworld.png", bounds).addTo(mapImageLayer);
+mapImageLayer.addTo(map);
 
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
@@ -41,7 +57,7 @@ let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
   color:"Black",
   weight:1,
   fill:false
-}).addTo(map);
+}).addTo(hoverLayer);
 
 function updateHover(latlng){
 
@@ -70,7 +86,7 @@ tileData = await res.json();
 
 //draw grid
 
-const gridGroup = L.layerGroup().addTo(map);
+const gridGroup = gridLayer;
 
 const rows = Math.ceil(mapHeight / tileSize);
 const cols = Math.ceil(mapWidth / tileSize);
@@ -108,7 +124,7 @@ for(const key in tileData){
 
   const [tileX,tileY] = key.split(",").map(Number);
 
-  L.rectangle([
+  var tile = L.rectangle([
     [tileY*tileSize,tileX*tileSize],
     [tileY*tileSize+tileSize,tileX*tileSize+tileSize]
   ],{
@@ -116,7 +132,25 @@ for(const key in tileData){
     weight:1,
     opacity:.25,
     fillOpacity:0.05
-  }).addTo(map);
+  })
+
+  switch(tileData[key].type){
+    case "dungeon":
+      tile.addTo(dungeonLayer);
+      break;
+    case "start":
+      tile.addTo(startLayer);
+      break;
+    case "special":
+      tile.addTo(specialLayer);
+      break;
+    case "city":
+      tile.addTo(cityLayer);
+      break;
+    case "quest":
+      tile.addTo(questLayer);
+      break;
+  }
 
 }
 
@@ -128,7 +162,7 @@ for (const key in tileData) {
   const centerLat = tileY *tileSize+ tileSize / 2;
   const centerLng = tileX * tileSize + tileSize / 2;
 
-  L.marker([centerLat + tileSize, centerLng], {
+  var titles = L.marker([centerLat + tileSize, centerLng], {
     icon: L.divIcon({
       className: 'tileLabel',
       html: `<span>${tileData[key].title}</span>`,
@@ -136,8 +170,46 @@ for (const key in tileData) {
       iconAnchor: [0, 0],
     }),
     interactive: false
-  }).addTo(map);
+  });
+
+  switch(tileData[key].type){
+    case "dungeon":
+      titles.addTo(dungeonLayer);
+      break;
+    case "start":
+      titles.addTo(startLayer);
+      break;
+    case "special":
+      titles.addTo(specialLayer);
+      break;
+    case "city":
+      titles.addTo(cityLayer);
+      break;
+    case "quest":
+      titles.addTo(questLayer);
+      break;
+  }
+
 }
+
+//layer control setup
+
+gridLayer.addTo(map);
+hoverLayer.addTo(map);
+
+dungeonLayer.addTo(map);
+startLayer.addTo(map);
+specialLayer.addTo(map);
+cityLayer.addTo(map);
+questLayer.addTo(map)
+
+overlayLayers["Dungeons"] = dungeonLayer;
+overlayLayers["Starts"] = startLayer;
+overlayLayers["Specials"] = specialLayer;
+overlayLayers["Cities"] = cityLayer;
+overlayLayers["Quests"] = questLayer;
+
+L.control.layers(null, overlayLayers).addTo(map);
 
 //on click event
 
