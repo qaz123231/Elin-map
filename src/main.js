@@ -8,18 +8,11 @@ const tileSize = 24;
 const mapWidth = 2928;
 const mapHeight = 2544;
 
-//LAYER GROUPS
-
-
 const mapImageLayer = L.layerGroup();
 const gridLayer = L.layerGroup();
 const hoverLayer = L.layerGroup();
 
-// dynamic POI layers
 const poiLayers = {};
-
-//MAP SETUP
-
 
 const map = L.map("map", {
   crs: L.CRS.Simple,
@@ -42,16 +35,17 @@ mapImageLayer.addTo(map);
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
 
-//UI ELEMENTS
-
+//UI 
 
 const coordBox = document.getElementById("coordBox");
 const panel = document.getElementById("infoPanel");
 const title = document.getElementById("tileTitle");
 const description = document.getElementById("tileDescription");
 
-//HOVER RECTANGLE
+const searchBox = document.getElementById("searchBox");
+const searchResults = document.getElementById("searchResults");
 
+//HOVER 
 
 let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
   color:"Black",
@@ -77,16 +71,14 @@ function updateHover(latlng){
 
 map.on("mousemove",(e)=>updateHover(e.latlng));
 
-//LOAD JSON
-
+//LOAD DATA 
 
 let tileData = {};
 
 const res = await fetch("/tileData.json");
 tileData = await res.json();
 
-//CREATE POI LAYERS AUTOMATICALLY
-
+//CREATE LAYERS 
 
 for(const key in tileData){
 
@@ -98,47 +90,14 @@ for(const key in tileData){
 
 }
 
-//DRAW GRID
-
-
-const rows = Math.ceil(mapHeight / tileSize);
-const cols = Math.ceil(mapWidth / tileSize);
-
-for (let i = 0; i <= rows; i++) {
-  const y = i * tileSize;
-
-  const line = L.polyline([[y, 0], [y, mapWidth]], {
-    color: 'white',
-    weight: 0.5,
-    opacity: 0.2,
-    interactive: false
-  });
-
-  gridLayer.addLayer(line);
-}
-
-for (let j = 0; j <= cols; j++) {
-  const x = j * tileSize;
-
-  const line = L.polyline([[0, x], [mapHeight, x]], {
-    color: 'white',
-    weight: 0.5,
-    opacity: 0.2,
-    interactive: false
-  });
-
-  gridLayer.addLayer(line);
-}
-
-//DRAW TILE HIGHLIGHTS
-
+//DRAW POI 
 
 for(const key in tileData){
 
   const [tileX,tileY] = key.split(",").map(Number);
   const type = tileData[key].type;
 
-  const tile = L.rectangle([
+  const rect = L.rectangle([
     [tileY*tileSize,tileX*tileSize],
     [tileY*tileSize+tileSize,tileX*tileSize+tileSize]
   ],{
@@ -148,12 +107,11 @@ for(const key in tileData){
     fillOpacity:0.05
   });
 
-  tile.addTo(poiLayers[type]);
+  rect.addTo(poiLayers[type]);
 
 }
 
-//DRAW TILE LABELS
-
+//LABELS 
 
 for (const key in tileData) {
 
@@ -166,9 +124,7 @@ for (const key in tileData) {
   const label = L.marker([centerLat + tileSize*.75, centerLng], {
     icon: L.divIcon({
       className: 'tileLabel',
-      html: `<span>${tileData[key].title}</span>`,
-      iconSize: null,
-      iconAnchor: [0, 0],
+      html: `<span>${tileData[key].title}</span>`
     }),
     interactive: false
   });
@@ -177,8 +133,124 @@ for (const key in tileData) {
 
 }
 
-//LAYER CONTROL
+//CLICK HANDLER
 
+function openTile(key){
+
+  if(!tileData[key]) return;
+
+  const newTitle = tileData[key].title;
+
+  const newDescription =
+    tileData[key].description.replace(/\n/g,"<br>");
+
+  if (panel.classList.contains("open")) {
+
+    panel.classList.remove("open");
+    document.body.classList.remove("panel-open");
+
+    setTimeout(() => {
+
+      title.textContent = newTitle;
+      description.innerHTML = newDescription;
+
+      panel.classList.add("open");
+      document.body.classList.add("panel-open");
+
+    },200);
+
+  } else {
+
+    title.textContent = newTitle;
+    description.innerHTML = newDescription;
+
+    panel.classList.add("open");
+    document.body.classList.add("panel-open");
+
+  }
+
+}
+
+map.on("click",(e)=>{
+
+  const tileX = Math.floor(e.latlng.lng / tileSize);
+  const tileY = Math.floor(e.latlng.lat / tileSize);
+
+  const key = `${tileX},${tileY}`;
+
+  if(tileData[key]){
+
+    openTile(key);
+
+  }else{
+
+    panel.classList.remove("open");
+    document.body.classList.remove("panel-open");
+
+  }
+
+});
+
+
+
+//SEARCH SYSTEM 
+
+const searchIndex = [];
+
+for(const key in tileData){
+
+  const [x,y] = key.split(",").map(Number);
+
+  searchIndex.push({
+    key,
+    x,
+    y,
+    title: tileData[key].title,
+    description: tileData[key].description
+  });
+
+}
+
+searchBox.addEventListener("input", ()=>{
+
+  const q = searchBox.value.toLowerCase();
+
+  searchResults.innerHTML = "";
+
+  if(q.length < 2) return;
+
+  const results = searchIndex.filter(loc =>
+    loc.title.toLowerCase().includes(q) ||
+    loc.description.toLowerCase().includes(q)
+  ).slice(0,10);
+
+  for(const r of results){
+
+    const div = document.createElement("div");
+    div.className = "searchItem";
+    div.textContent = r.title;
+
+    div.onclick = ()=>{
+
+  const lat = r.y * tileSize + tileSize/2;
+  const lng = r.x * tileSize + tileSize/2;
+
+  map.setView([lat,lng],3);
+
+  openTile(r.key);
+
+  searchResults.innerHTML="";
+  searchBox.value="";
+
+};
+
+    searchResults.appendChild(div);
+
+  }
+
+});
+
+//LAYER CONTROL 
 
 gridLayer.addTo(map);
 hoverLayer.addTo(map);
@@ -191,8 +263,6 @@ const groupedOverlays = {
   "Points of Interest": {}
 };
 
-// automatically build POI list
-
 for(const type in poiLayers){
 
   const name = type.charAt(0).toUpperCase() + type.slice(1);
@@ -202,54 +272,3 @@ for(const type in poiLayers){
 }
 
 L.control.groupedLayers(null, groupedOverlays).addTo(map);
-
-//CLICK EVENT
-
-
-map.on("click", (e) => {
-
-  const tileX = Math.floor(e.latlng.lng / tileSize);
-  const tileY = Math.floor(e.latlng.lat / tileSize);
-
-  const key = `${tileX},${tileY}`;
-
-  if (tileData[key]) {
-
-    const newTitle = tileData[key].title;
-
-    const newDescription =
-      tileData[key].description.replace(/\n/g, "<br>");
-
-    if (panel.classList.contains("open")) {
-
-      panel.classList.remove("open");
-      document.body.classList.remove("panel-open");
-
-      setTimeout(() => {
-
-        title.textContent = newTitle;
-        description.innerHTML = newDescription;
-
-        panel.classList.add("open");
-        document.body.classList.add("panel-open");
-
-      }, 200);
-
-    } else {
-
-      title.textContent = newTitle;
-      description.innerHTML = newDescription;
-
-      panel.classList.add("open");
-      document.body.classList.add("panel-open");
-
-    }
-
-  } else {
-
-    panel.classList.remove("open");
-    document.body.classList.remove("panel-open");
-
-  }
-
-});

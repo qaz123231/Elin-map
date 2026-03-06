@@ -4,7 +4,6 @@
 
 <meta charset="UTF-8" />
 <link rel="icon" href="/elin.ico" />
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <title>Elin Interactive Map</title>
@@ -15,11 +14,19 @@
 
 <div id="map"></div>
 
+<!--SEARCH BAR-->
+<div id="searchContainer">
+  <input id="searchBox" placeholder="Search locations or descriptions..." />
+  <div id="searchResults"></div>
+</div>
+
+<!--RIGHT INFO PANEL-->
 <div id="infoPanel">
   <h2 id="tileTitle"></h2>
   <div id="tileDescription"></div>
 </div>
 
+<!--BOTTOM LEFT COORDINATE BOX-->
 <div id="coordBox">
   Tile: (0,0)
 </div>
