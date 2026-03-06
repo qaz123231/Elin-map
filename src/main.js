@@ -8,20 +8,18 @@ const tileSize = 24;
 const mapWidth = 2928;
 const mapHeight = 2544;
 
-// Layer groups
+//LAYER GROUPS
+
 
 const mapImageLayer = L.layerGroup();
 const gridLayer = L.layerGroup();
 const hoverLayer = L.layerGroup();
 
-const specialLayer = L.layerGroup();
-const dungeonLayer = L.layerGroup();
-const cityLayer = L.layerGroup();
-const startLayer = L.layerGroup();
-const questLayer = L.layerGroup();
+// dynamic POI layers
+const poiLayers = {};
 
+//MAP SETUP
 
-//leaflet setup
 
 const map = L.map("map", {
   crs: L.CRS.Simple,
@@ -44,14 +42,16 @@ mapImageLayer.addTo(map);
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
 
-//ui elements
+//UI ELEMENTS
+
 
 const coordBox = document.getElementById("coordBox");
 const panel = document.getElementById("infoPanel");
 const title = document.getElementById("tileTitle");
 const description = document.getElementById("tileDescription");
 
-//selection rectangle
+//HOVER RECTANGLE
+
 
 let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
   color:"Black",
@@ -77,54 +77,68 @@ function updateHover(latlng){
 
 map.on("mousemove",(e)=>updateHover(e.latlng));
 
-//load json
+//LOAD JSON
+
 
 let tileData = {};
 
 const res = await fetch("/tileData.json");
 tileData = await res.json();
 
-//draw grid
+//CREATE POI LAYERS AUTOMATICALLY
 
-const gridGroup = gridLayer;
+
+for(const key in tileData){
+
+  const type = tileData[key].type;
+
+  if(!poiLayers[type]){
+    poiLayers[type] = L.layerGroup().addTo(map);
+  }
+
+}
+
+//DRAW GRID
+
 
 const rows = Math.ceil(mapHeight / tileSize);
 const cols = Math.ceil(mapWidth / tileSize);
 
-//Horizontal lines
 for (let i = 0; i <= rows; i++) {
   const y = i * tileSize;
+
   const line = L.polyline([[y, 0], [y, mapWidth]], {
     color: 'white',
     weight: 0.5,
     opacity: 0.2,
     interactive: false
   });
-  gridGroup.addLayer(line);
+
+  gridLayer.addLayer(line);
 }
 
-//Vertical lines
 for (let j = 0; j <= cols; j++) {
   const x = j * tileSize;
+
   const line = L.polyline([[0, x], [mapHeight, x]], {
     color: 'white',
     weight: 0.5,
     opacity: 0.2,
     interactive: false
   });
-  gridGroup.addLayer(line);
+
+  gridLayer.addLayer(line);
 }
 
+//DRAW TILE HIGHLIGHTS
 
-
-
-//defined tiles hightlight
 
 for(const key in tileData){
 
   const [tileX,tileY] = key.split(",").map(Number);
+  const type = tileData[key].type;
 
-  var tile = L.rectangle([
+  const tile = L.rectangle([
     [tileY*tileSize,tileX*tileSize],
     [tileY*tileSize+tileSize,tileX*tileSize+tileSize]
   ],{
@@ -132,37 +146,24 @@ for(const key in tileData){
     weight:1,
     opacity:.25,
     fillOpacity:0.05
-  })
+  });
 
-  switch(tileData[key].type){
-    case "dungeon":
-      tile.addTo(dungeonLayer);
-      break;
-    case "start":
-      tile.addTo(startLayer);
-      break;
-    case "special":
-      tile.addTo(specialLayer);
-      break;
-    case "city":
-      tile.addTo(cityLayer);
-      break;
-    case "quest":
-      tile.addTo(questLayer);
-      break;
-  }
+  tile.addTo(poiLayers[type]);
 
 }
 
-//on map titles
+//DRAW TILE LABELS
+
 
 for (const key in tileData) {
+
   const [tileX, tileY] = key.split(",").map(Number);
+  const type = tileData[key].type;
 
   const centerLat = tileY *tileSize+ tileSize / 2;
   const centerLng = tileX * tileSize + tileSize / 2;
 
-  var titles = L.marker([centerLat + tileSize*.75, centerLng], {
+  const label = L.marker([centerLat + tileSize*.75, centerLng], {
     icon: L.divIcon({
       className: 'tileLabel',
       html: `<span>${tileData[key].title}</span>`,
@@ -172,54 +173,38 @@ for (const key in tileData) {
     interactive: false
   });
 
-  switch(tileData[key].type){
-    case "dungeon":
-      titles.addTo(dungeonLayer);
-      break;
-    case "start":
-      titles.addTo(startLayer);
-      break;
-    case "special":
-      titles.addTo(specialLayer);
-      break;
-    case "city":
-      titles.addTo(cityLayer);
-      break;
-    case "quest":
-      titles.addTo(questLayer);
-      break;
-  }
+  label.addTo(poiLayers[type]);
 
 }
 
-//layer control setup
+//LAYER CONTROL
+
 
 gridLayer.addTo(map);
 hoverLayer.addTo(map);
 
-dungeonLayer.addTo(map);
-startLayer.addTo(map);
-specialLayer.addTo(map);
-cityLayer.addTo(map);
-questLayer.addTo(map)
-
-var groupedOverlays = {
+const groupedOverlays = {
   "Settings": {
     "Grid": gridLayer,
     "Selection": hoverLayer
   },
-  "Points of Interest": {
-    "Starting points": startLayer,
-    "Cities": cityLayer,
-    "Quests": questLayer,
-    "Dungeons": dungeonLayer,
-    "Specials": specialLayer
-  }
+  "Points of Interest": {}
 };
+
+// automatically build POI list
+
+for(const type in poiLayers){
+
+  const name = type.charAt(0).toUpperCase() + type.slice(1);
+
+  groupedOverlays["Points of Interest"][name] = poiLayers[type];
+
+}
 
 L.control.groupedLayers(null, groupedOverlays).addTo(map);
 
-//on click event
+//CLICK EVENT
+
 
 map.on("click", (e) => {
 
@@ -231,30 +216,39 @@ map.on("click", (e) => {
   if (tileData[key]) {
 
     const newTitle = tileData[key].title;
+
     const newDescription =
       tileData[key].description.replace(/\n/g, "<br>");
 
     if (panel.classList.contains("open")) {
 
       panel.classList.remove("open");
+      document.body.classList.remove("panel-open");
 
       setTimeout(() => {
+
         title.textContent = newTitle;
         description.innerHTML = newDescription;
+
         panel.classList.add("open");
+        document.body.classList.add("panel-open");
+
       }, 200);
 
     } else {
 
       title.textContent = newTitle;
       description.innerHTML = newDescription;
+
       panel.classList.add("open");
+      document.body.classList.add("panel-open");
 
     }
 
   } else {
 
     panel.classList.remove("open");
+    document.body.classList.remove("panel-open");
 
   }
 
