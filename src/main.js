@@ -6,6 +6,8 @@ const tileSize = 24;
 const mapWidth = 2928;
 const mapHeight = 2544;
 
+//leaflet setup
+
 const map = L.map("map", {
   crs: L.CRS.Simple,
   minZoom: -.5,
@@ -14,7 +16,7 @@ const map = L.map("map", {
   attributionControl: true
 });
 
-map.attributionControl.setPrefix(false); // remove "Leaflet" prefix if you want
+map.attributionControl.setPrefix(false);
 map.attributionControl.addAttribution(
   'Map by <a href="https://github.com/qaz123231/Elin-map" target="_blank">qaz123231</a>'
 );
@@ -26,14 +28,14 @@ L.imageOverlay("/overworld.png", bounds).addTo(map);
 map.fitBounds(bounds);
 map.setMaxBounds(bounds);
 
-/* UI ELEMENTS */
+//ui elements
 
 const coordBox = document.getElementById("coordBox");
 const panel = document.getElementById("infoPanel");
 const title = document.getElementById("tileTitle");
 const description = document.getElementById("tileDescription");
 
-/* HOVER RECTANGLE */
+//selection rectangle
 
 let hoverRect = L.rectangle([[0,0],[tileSize,tileSize]],{
   color:"Black",
@@ -59,7 +61,7 @@ function updateHover(latlng){
 
 map.on("mousemove",(e)=>updateHover(e.latlng));
 
-/* LOAD TILE DATA */
+//load json
 
 let tileData = {};
 
@@ -73,7 +75,7 @@ const gridGroup = L.layerGroup().addTo(map);
 const rows = Math.ceil(mapHeight / tileSize);
 const cols = Math.ceil(mapWidth / tileSize);
 
-// Horizontal lines
+//Horizontal lines
 for (let i = 0; i <= rows; i++) {
   const y = i * tileSize;
   const line = L.polyline([[y, 0], [y, mapWidth]], {
@@ -85,7 +87,7 @@ for (let i = 0; i <= rows; i++) {
   gridGroup.addLayer(line);
 }
 
-// Vertical lines
+//Vertical lines
 for (let j = 0; j <= cols; j++) {
   const x = j * tileSize;
   const line = L.polyline([[0, x], [mapHeight, x]], {
@@ -100,7 +102,7 @@ for (let j = 0; j <= cols; j++) {
 
 
 
-/* DRAW TILES */
+//defined tiles hightlight
 
 for(const key in tileData){
 
@@ -118,9 +120,8 @@ for(const key in tileData){
 
 }
 
-// On map titles
+//on map titles
 
-// Add labels above defined tiles
 for (const key in tileData) {
   const [tileX, tileY] = key.split(",").map(Number);
 
@@ -132,13 +133,13 @@ for (const key in tileData) {
       className: 'tileLabel',
       html: `<span>${tileData[key].title}</span>`,
       iconSize: null,
-      iconAnchor: [0, 0], // top-left corner of marker
+      iconAnchor: [0, 0],
     }),
     interactive: false
   }).addTo(map);
 }
 
-/* CLICK HANDLER */
+//on click event
 
 map.on("click", (e) => {
 
@@ -153,7 +154,6 @@ map.on("click", (e) => {
     const newDescription =
       tileData[key].description.replace(/\n/g, "<br>");
 
-    // If already open, close first to replay animation
     if (panel.classList.contains("open")) {
 
       panel.classList.remove("open");
