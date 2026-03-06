@@ -1,5 +1,5 @@
 # Elin Interactive Map
-##This map is most likely outdated or may have wrong information
+## This map is most likely outdated or may have wrong information
 
 This project is an **interactive** map of Elin using [Leaflet](https://leafletjs.com/)
 
