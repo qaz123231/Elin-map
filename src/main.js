@@ -235,7 +235,10 @@ searchBox.addEventListener("input", ()=>{
   const lat = r.y * tileSize + tileSize/2;
   const lng = r.x * tileSize + tileSize/2;
 
-  map.setView([lat,lng],3);
+  map.flyTo([lat, lng], 1, {
+    animate: true,
+    duration: 1
+  });
 
   openTile(r.key);
 
